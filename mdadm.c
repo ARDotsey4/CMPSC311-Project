@@ -43,8 +43,12 @@ int mdadm_unmount(void) {
 }
 
 int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
-  /* YOUR CODE */
+  if(status == -1 || len >= 1024){
+    return -1;
+  }
   return len;
 }
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
 /*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
 /*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
