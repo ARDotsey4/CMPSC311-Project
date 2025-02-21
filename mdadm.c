@@ -1,5 +1,5 @@
-/* Author:
-   Date:
+/* Author: Armand Dotsey
+   Date: 2-23-25
     */
 
 /***
@@ -35,3 +35,4 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   /* YOUR CODE */
   return len;
 }
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
