@@ -20,34 +20,51 @@
 
 #include "jbod.h"
 #include "util.h"
-static int status = -1; // 1 = mounted, -1 = unmounted
+static int status = -1; // 1 = mounted, 0 = unmounted
+const int MAX_SIZE = JBOD_NUM_DISKS*JBOD_BLOCK_SIZE*JBOD_NUM_BLOCKS_PER_DISK;
 
 int mdadm_mount(void) {
-  // Already mounted - fail
-  if(status == 1){;
-    return -1;
+  int fail = jbod_operation(JBOD_MOUNT,NULL);
+  if (fail){
+    return fail;
   }
-  // Mount success
-  status*=-1;
+  status = 1;
   return 1;
 }
 
 int mdadm_unmount(void) {
-  // Already unmounted - fail
-  if(status == -1){
-    return -1;
+  int fail = jbod_operation(JBOD_UNMOUNT,NULL);
+  if (fail){
+    return fail;
   }
-  // Unmount success
-  status*=-1;
+  status = 0;
   return 1;
 }
 
 int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
-  if(status == -1 || len >= 1024){
+  if(status == -1 || addr > (MAX_SIZE - len) || len >= 1024 || (len != 0 && buf == NULL)){
     return -1;
   }
   return len;
 }
+
+int locateDisk(uint32_t addr){
+  return 1 + (addr + 1)/(JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE);
+}
+
+int locateBlock(uint32_t addr){
+  return (addr % (JBOD_NUM_BLOCKS_PER_DISK * JBOD_BLOCK_SIZE));
+}
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
 /*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
 /*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */
 /*CWD /home/ardotsey4/cmpsc311/sp2-lab2-ARDotsey4 */

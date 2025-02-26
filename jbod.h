@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define JBOD_NUM_DISKS 16
-#define JBOD_DISK_SIZE 65536
+#define JBOD_DISK_SIZE = 65536
 #define JBOD_BLOCK_SIZE 256
 #define JBOD_NUM_BLOCKS_PER_DISK 256
 
