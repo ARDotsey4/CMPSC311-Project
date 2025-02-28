@@ -14,7 +14,7 @@ int mdadm_unmount(void);
 int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf);
 
 // Return the desired disk/block to run operation on
-int locateDisk(uint32_t addr);
-int locateBlock(uint32_t addr);
+uint32_t locateDisk(uint32_t addr);
+uint32_t locateBlock(uint32_t addr);
 
 #endif

@@ -158,7 +158,7 @@ int test_read_invalid_parameters() {
 
   rc = mdadm_unmount();
   if (rc != 1) {
-    printf("failed: unmount should succeed on a mounted system but it failed.\n");
+    printf("failed: unmount should succeed on a mounted system but it failed.\n%d\n",rc);
     return 0;
   }
 
