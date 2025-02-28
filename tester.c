@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
        
    }
    fclose(ptr);
-  
   score += test_mount_unmount();
   score += test_read_before_mount();
   score += test_read_invalid_parameters();
@@ -318,7 +317,7 @@ int test_read_three_blocks() {
     char *expected_s = stringify(expected, TEST3_SIZE);
 
     printf("failed:\n  got:\n%s\n  expected:\n%s\n", out_s, expected_s);
-
+    
     free(out_s);
     free(expected_s);
     return 0;
