@@ -67,7 +67,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   uint32_t lenInBlock1 = JBOD_BLOCK_SIZE - startInBlock;
 
   // Full read within block bounds
-  if((startInBlock + len) < JBOD_BLOCK_SIZE){
+  if((startInBlock + len) <= JBOD_BLOCK_SIZE){
     memcpy(buf, blockRead + startInBlock, len);
     return len;
   }
@@ -78,7 +78,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   
   // Read intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
-  while(tempLen >= JBOD_BLOCK_SIZE){
+  while(tempLen > JBOD_BLOCK_SIZE){
     jbod_operation(JBOD_READ_BLOCK, blockRead);
     block += 1;
     memcpy(buf + len - tempLen, blockRead, JBOD_BLOCK_SIZE);
@@ -117,7 +117,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   uint32_t lenInBlock1 = JBOD_BLOCK_SIZE - startInBlock;
 
   // Full write within block bounds
-  if((startInBlock + len) < JBOD_BLOCK_SIZE){
+  if((startInBlock + len) <= JBOD_BLOCK_SIZE){
     memcpy(blockWrite + startInBlock, buf, len);
     jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
     return len;
@@ -131,7 +131,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   
   // Write intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
-  while(tempLen >= JBOD_BLOCK_SIZE){
+  while(tempLen > JBOD_BLOCK_SIZE){
     memcpy(blockWrite, buf + len - tempLen, JBOD_BLOCK_SIZE);
     jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
     block += 1;
@@ -140,7 +140,9 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
     tempLen -= JBOD_BLOCK_SIZE;
     }
 
-    // Read final block
+  // Read final block
+  jbod_operation(JBOD_READ_BLOCK, blockWrite);
+  seekLoc(disk, block);
   memcpy(blockWrite, buf + len - tempLen, tempLen);
   jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
 
@@ -177,4 +179,7 @@ void incrementDiskCheck(uint32_t *disk, uint32_t *block){
     *block = 0;
     seekLoc(*disk, *block);
   }
-}/*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 */
+}/*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 *//*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 */
+/*CWD /home/ardotsey4/cmpsc311/sp25-lab3-ARDotsey4 */
