@@ -45,4 +45,10 @@ bool cache_enabled(void);
 /* Prints the hit rate of the cache. */
 void cache_print_hit_rate(void);
 
+// Returns 1 if parameters are invalid, 0 otherwise
+int invalidCacheParams(int disk_num, int block_num, const uint8_t *buf);
+
+// Checks if specified block is in cache. If so, returns index in cache, -1 otherwise
+int existingEntry(int disk_num, int block_num);
+
 #endif
