@@ -113,6 +113,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   // Initialize writing buffer and initial write
   uint8_t blockWrite[JBOD_BLOCK_SIZE];
   jbod_operation(JBOD_READ_BLOCK, blockWrite);
+  seekLoc(disk, block);
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
   uint32_t lenInBlock1 = JBOD_BLOCK_SIZE - startInBlock;
