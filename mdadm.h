@@ -29,5 +29,7 @@ void seekLoc(uint32_t disk, uint32_t block);
 // Increment to next disk and reset block if final block is reached
 void incrementDiskCheck(uint32_t *disk, uint32_t *block);
 
+// Helper for mdadm_read to potentially read from cache or hard drive
+void readHelp(uint32_t *disk, uint32_t *block, uint8_t *blockRead);
 
 #endif

@@ -35,6 +35,7 @@ int cache_lookup(int disk_num, int block_num, uint8_t *buf) {
   }
 
   clock+=1;
+  num_queries+=1;
 
   int loc = existingEntry(disk_num, block_num);
   if (loc == -1){
@@ -42,6 +43,7 @@ int cache_lookup(int disk_num, int block_num, uint8_t *buf) {
   }
 
   memcpy(buf, cache[loc].block, JBOD_BLOCK_SIZE);
+  num_hits+=1;
   cache[loc].access_time = clock;
 
   return 1;

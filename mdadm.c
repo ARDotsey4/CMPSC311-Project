@@ -59,11 +59,10 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   // Move to read location
   uint32_t disk = locateDisk(addr);
   uint32_t block = locateBlock(addr);
-  seekLoc(disk, block);
 
   // Initial read and increment
   uint8_t blockRead[JBOD_BLOCK_SIZE];
-  jbod_operation(JBOD_READ_BLOCK, blockRead);
+  readHelp(&disk, &block, blockRead);
   block += 1;
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
@@ -82,7 +81,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   // Read intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
   while(tempLen > JBOD_BLOCK_SIZE){
-    jbod_operation(JBOD_READ_BLOCK, blockRead);
+    readHelp(&disk, &block, blockRead);
     block += 1;
     memcpy(buf + len - tempLen, blockRead, JBOD_BLOCK_SIZE);
     // Increments
@@ -91,7 +90,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
     }
 
   // Read final block
-  jbod_operation(JBOD_READ_BLOCK, blockRead);
+  readHelp(&disk, &block, blockRead);
   memcpy(buf + len - tempLen, blockRead, tempLen);
   
   return len;
@@ -114,7 +113,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   // Initialize writing buffer and initial write
   uint8_t blockWrite[JBOD_BLOCK_SIZE];
   jbod_operation(JBOD_READ_BLOCK, blockWrite);
-  seekLoc(disk, block);
+  seekLoc(disk, block); // *** Seems unnecessary
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
   uint32_t lenInBlock1 = JBOD_BLOCK_SIZE - startInBlock;
@@ -143,7 +142,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
     tempLen -= JBOD_BLOCK_SIZE;
     }
 
-  // Read final block
+  // Write final block
   jbod_operation(JBOD_READ_BLOCK, blockWrite);
   seekLoc(disk, block);
   memcpy(blockWrite, buf + len - tempLen, tempLen);
@@ -179,9 +178,17 @@ void incrementDiskCheck(uint32_t *disk, uint32_t *block){
     *block = 0;
     seekLoc(*disk, *block);
   }
+}
+
+void readHelp(uint32_t *disk, uint32_t *block, uint8_t *blockRead){
+  if (cache_lookup(*disk, *block, blockRead) == 1){
+    return;
+  }
+  incrementDiskCheck(disk, block);
+  seekLoc(*disk, *block);
+  jbod_operation(JBOD_READ_BLOCK, blockRead);
+  if (!cache_enabled()){
+    return;
+  }
+  cache_insert(*disk, *block, blockRead);
 }/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
-/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
-/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
-/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
-/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
-/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
