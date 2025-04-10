@@ -113,7 +113,6 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   // Initialize writing buffer and initial write
   uint8_t blockWrite[JBOD_BLOCK_SIZE];
   jbod_operation(JBOD_READ_BLOCK, blockWrite);
-  seekLoc(disk, block); // *** Seems unnecessary
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
   uint32_t lenInBlock1 = JBOD_BLOCK_SIZE - startInBlock;
@@ -191,4 +190,4 @@ void readHelp(uint32_t *disk, uint32_t *block, uint8_t *blockRead){
     return;
   }
   cache_insert(*disk, *block, blockRead);
-}/*CWD /home/ardotsey4/cmpsc311/sp25-lab4-ARDotsey4 */
+}
