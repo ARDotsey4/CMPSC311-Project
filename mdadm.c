@@ -62,7 +62,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
 
   // Initial read and increment
   uint8_t blockRead[JBOD_BLOCK_SIZE];
-  readHelp(&disk, &block, blockRead);
+  readHelp(disk, block, blockRead);
   block += 1;
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
@@ -81,7 +81,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   // Read intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
   while(tempLen > JBOD_BLOCK_SIZE){
-    readHelp(&disk, &block, blockRead);
+    readHelp(disk, block, blockRead);
     block += 1;
     memcpy(buf + len - tempLen, blockRead, JBOD_BLOCK_SIZE);
     // Increments
@@ -90,7 +90,7 @@ int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
     }
 
   // Read final block
-  readHelp(&disk, &block, blockRead);
+  readHelp(disk, block, blockRead);
   memcpy(buf + len - tempLen, blockRead, tempLen);
   
   return len;
@@ -112,7 +112,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
 
   // Initialize writing buffer and initial write
   uint8_t blockWrite[JBOD_BLOCK_SIZE];
-  jbod_operation(JBOD_READ_BLOCK, blockWrite);
+  readHelp(disk, block, blockWrite);
   seekLoc(disk, block);
   
   uint32_t startInBlock = addr % JBOD_BLOCK_SIZE;
@@ -122,31 +122,37 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   if((startInBlock + len) <= JBOD_BLOCK_SIZE){
     memcpy(blockWrite + startInBlock, buf, len);
     jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+    cache_update(disk, block, blockWrite);
     return len;
   }
 
   // Write first block
   memcpy(blockWrite + startInBlock, buf, lenInBlock1);
   jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+  cache_update(disk, block, blockWrite);
   block += 1;
   incrementDiskCheck(&disk, &block);
+  seekLoc(disk, block);
   
   // Write intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
   while(tempLen > JBOD_BLOCK_SIZE){
     memcpy(blockWrite, buf + len - tempLen, JBOD_BLOCK_SIZE);
     jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+    cache_update(disk, block, blockWrite);
     block += 1;
     // Increments
     incrementDiskCheck(&disk, &block);
+    seekLoc(disk, block);
     tempLen -= JBOD_BLOCK_SIZE;
     }
 
   // Write final block
-  jbod_operation(JBOD_READ_BLOCK, blockWrite);
+  readHelp(disk, block, blockWrite);
   seekLoc(disk, block);
   memcpy(blockWrite, buf + len - tempLen, tempLen);
   jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+  cache_update(disk, block, blockWrite);
 
   return len;
 }
@@ -176,19 +182,18 @@ void incrementDiskCheck(uint32_t *disk, uint32_t *block){
   if(*block >= JBOD_NUM_BLOCKS_PER_DISK){
     *disk += 1;
     *block = 0;
-    seekLoc(*disk, *block);
   }
 }
 
-void readHelp(uint32_t *disk, uint32_t *block, uint8_t *blockRead){
-  if (cache_lookup(*disk, *block, blockRead) == 1){
+void readHelp(uint32_t disk, uint32_t block, uint8_t *blockBuf){
+  if (cache_lookup(disk, block, blockBuf) == 1){
     return;
   }
-  incrementDiskCheck(disk, block);
-  seekLoc(*disk, *block);
-  jbod_operation(JBOD_READ_BLOCK, blockRead);
-  if (!cache_enabled()){
-    return;
-  }
-  cache_insert(*disk, *block, blockRead);
+  seekLoc(disk, block);
+  jbod_operation(JBOD_READ_BLOCK, blockBuf);
+  cache_insert(disk, block, blockBuf);
+}
+
+void writeHelp(uint32_t disk, uint32_t block, uint8_t *blockBuf){
+
 }
