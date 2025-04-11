@@ -131,8 +131,11 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
   cache_update(disk, block, blockWrite);
   block += 1;
-  incrementDiskCheck(&disk, &block);
-  seekLoc(disk, block);
+  // Check for 
+  int diskInc = incrementDiskCheck(&disk, &block);
+  if (diskInc){
+    seekLoc(disk, block);
+  }
   
   // Write intermediate blocks
   uint32_t tempLen = len - lenInBlock1;
@@ -142,8 +145,11 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
     cache_update(disk, block, blockWrite);
     block += 1;
     // Increments
-    incrementDiskCheck(&disk, &block);
-    seekLoc(disk, block);
+    diskInc = incrementDiskCheck(&disk, &block);
+    // Only seek manually if there is a disk increment
+    if (diskInc){
+      seekLoc(disk, block);
+    }
     tempLen -= JBOD_BLOCK_SIZE;
     }
 
@@ -151,6 +157,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   readHelp(disk, block, blockWrite);
   seekLoc(disk, block);
   memcpy(blockWrite, buf + len - tempLen, tempLen);
+
   jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
   cache_update(disk, block, blockWrite);
 
@@ -178,22 +185,22 @@ void seekLoc(uint32_t disk, uint32_t block){
   jbod_operation(seekBlockOp,NULL);
 }
 
-void incrementDiskCheck(uint32_t *disk, uint32_t *block){
+int incrementDiskCheck(uint32_t *disk, uint32_t *block){
   if(*block >= JBOD_NUM_BLOCKS_PER_DISK){
     *disk += 1;
     *block = 0;
+    return 1;
   }
+  return 0;
 }
 
 void readHelp(uint32_t disk, uint32_t block, uint8_t *blockBuf){
+  // Implicitly checks if cache enabled and pulls from cache if entry found
   if (cache_lookup(disk, block, blockBuf) == 1){
     return;
   }
+  // Pulls directly from JBOD and inserts to cache before returning
   seekLoc(disk, block);
   jbod_operation(JBOD_READ_BLOCK, blockBuf);
   cache_insert(disk, block, blockBuf);
-}
-
-void writeHelp(uint32_t disk, uint32_t block, uint8_t *blockBuf){
-
 }

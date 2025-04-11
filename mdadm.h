@@ -27,9 +27,9 @@ uint32_t locateBlock(uint32_t addr);
 void seekLoc(uint32_t disk, uint32_t block);
 
 // Increment to next disk and reset block if final block is reached
-void incrementDiskCheck(uint32_t *disk, uint32_t *block);
+int incrementDiskCheck(uint32_t *disk, uint32_t *block);
 
-// Helper for mdadm_read to potentially read from cache or hard drive
+// Helper for mdadm_read to potentially read from cache or JBOD
 void readHelp(uint32_t disk, uint32_t block, uint8_t *blockRead);
 
 #endif
