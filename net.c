@@ -107,12 +107,12 @@ bool jbod_connect(const char *ip, uint16_t port) {
 
   struct sockaddr_in sock;
   sock.sin_family = AF_INET;
-  sock.sin_port = port;
+  sock.sin_port = htons(port);
   if(inet_aton(ip, &(sock.sin_addr)) == 0){
     return false;
   }
 
-  return (connect(cli_sd, (const struct sockaddr *)&sock, sizeof(sock)) == -1);
+  return (connect(cli_sd, (const struct sockaddr *)&sock, sizeof(sock)) != -1);
 }
 
 
