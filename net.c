@@ -18,11 +18,11 @@ int cli_sd = -1;
 It may need to call the system call "read" multiple times to reach the given size len. 
 */
 static bool nread(int fd, int len, uint8_t *buf) {
-  if(cli_sd == -1){
+  if(fd == -1){
     return false;
   }
   
-  read(fd, buf, len);
+  read(fd, buf, len); // Causes infinite runtime
   return true;
 }
 
@@ -34,7 +34,7 @@ static bool nwrite(int fd, int len, uint8_t *buf) {
     return false;
   }
 
-  write(fd, buf, len);
+  write(fd, (const uint8_t *)buf, len);
   return true;
 }
 
@@ -91,8 +91,20 @@ The above information (when applicable) has to be wrapped into a jbod request pa
 You may call the above nwrite function to do the actual sending.  
 */
 static bool send_packet(int sd, uint32_t op, uint8_t *block) {
-  nwrite(sd, JBOD_BLOCK_SIZE, block); // filler
-  return false;
+  uint16_t len = block == NULL ? HEADER_LEN : HEADER_LEN + JBOD_BLOCK_SIZE;
+  uint8_t *buf = malloc(len);
+  len = htons(len);
+  op = htonl(op);
+  
+  memcpy(buf, &len, sizeof(len));
+  memcpy(buf+2, &op, sizeof(op));
+  if(block != NULL){
+    memcpy(buf+HEADER_LEN, block, JBOD_BLOCK_SIZE);
+  }
+  nwrite(sd, ntohs(len), buf);
+
+  free(buf);
+  return true;
 }
 
 
