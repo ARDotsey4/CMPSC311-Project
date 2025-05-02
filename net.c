@@ -59,20 +59,20 @@ static bool recv_packet(int sd, uint32_t *op, uint16_t *ret, uint8_t *block) {
     return false;
   }
   uint16_t len;
-  memcpy(&len, buf+6, sizeof(uint16_t));
+  memcpy(&len, buf, sizeof(uint16_t));
   len = ntohs(len);
   memcpy(op, buf+2, sizeof(uint32_t));
   *op = ntohl(*op);
-  memcpy(ret, buf, sizeof(uint16_t));
+  memcpy(ret, buf+6, sizeof(uint16_t));
   *ret = ntohs(*ret);
 
   if(len == HEADER_LEN){
     return true;
   }
 
-  buf = realloc(buf, HEADER_LEN + JBOD_BLOCK_SIZE);
-  nread(sd, HEADER_LEN+JBOD_BLOCK_SIZE, buf);
-  memcpy(block, buf+HEADER_LEN, JBOD_BLOCK_SIZE); // Probably backwards
+  buf = realloc(buf, JBOD_BLOCK_SIZE);
+  nread(sd, JBOD_BLOCK_SIZE, buf);
+  memcpy(block, buf, JBOD_BLOCK_SIZE); // Probably backwards
 
   free(buf);
   return true;
@@ -150,6 +150,10 @@ int jbod_client_operation(uint32_t op, uint8_t *block) {// make sure send and re
   }
 
   uint16_t ret;
-  recv_packet(cli_sd, &op, &ret, block);
-  return ret;
+  uint32_t opret;
+  recv_packet(cli_sd, &opret, &ret, block);
+  if(op != opret){
+    return -1;
+  }
+  return ret==0 ? 0 : -1;
 }
