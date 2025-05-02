@@ -22,7 +22,7 @@ static bool nread(int fd, int len, uint8_t *buf) {
     return false;
   }
   
-  read(fd, buf, len); // Causes infinite runtime
+  read(fd, buf, len);
   return true;
 }
 
@@ -53,11 +53,13 @@ and then use the length field in the header to determine whether it is needed to
 a block of data from the server. You may use the above nread function here.  
 */
 static bool recv_packet(int sd, uint32_t *op, uint16_t *ret, uint8_t *block) {
+  // Receive packet and header check
   uint8_t *buf = malloc(HEADER_LEN);
-
   if (nread(sd, HEADER_LEN, buf) == false){
     return false;
   }
+
+  // Unwrap header
   uint16_t len;
   memcpy(&len, buf, sizeof(uint16_t));
   len = ntohs(len);
@@ -70,6 +72,7 @@ static bool recv_packet(int sd, uint32_t *op, uint16_t *ret, uint8_t *block) {
     return true;
   }
 
+  // Take payload
   buf = realloc(buf, JBOD_BLOCK_SIZE);
   nread(sd, JBOD_BLOCK_SIZE, buf);
   memcpy(block, buf, JBOD_BLOCK_SIZE); // Probably backwards
@@ -91,16 +94,20 @@ The above information (when applicable) has to be wrapped into a jbod request pa
 You may call the above nwrite function to do the actual sending.  
 */
 static bool send_packet(int sd, uint32_t op, uint8_t *block) {
+  // Check payload and initialize packet
   uint16_t len = block == NULL ? HEADER_LEN : HEADER_LEN + JBOD_BLOCK_SIZE;
   uint8_t *buf = malloc(len);
+
+  // Wrap packet
   len = htons(len);
   op = htonl(op);
-  
   memcpy(buf, &len, sizeof(len));
   memcpy(buf+2, &op, sizeof(op));
   if(block != NULL){
     memcpy(buf+HEADER_LEN, block, JBOD_BLOCK_SIZE);
   }
+
+  // Send packet
   nwrite(sd, ntohs(len), buf);
 
   free(buf);
@@ -115,8 +122,10 @@ static bool send_packet(int sd, uint32_t op, uint8_t *block) {
  * you will not call it in mdadm.c
 */
 bool jbod_connect(const char *ip, uint16_t port) {
+  // Create socket
   cli_sd = socket(AF_INET, SOCK_STREAM, 0);
 
+  // Prepare server connection
   struct sockaddr_in sock;
   sock.sin_family = AF_INET;
   sock.sin_port = htons(port);
@@ -124,6 +133,7 @@ bool jbod_connect(const char *ip, uint16_t port) {
     return false;
   }
 
+  // Connect to server
   return (connect(cli_sd, (const struct sockaddr *)&sock, sizeof(sock)) != -1);
 }
 
@@ -144,16 +154,22 @@ void jbod_disconnect(void) {
 The meaning of each parameter is the same as in the original jbod_operation function. 
 return: 0 means success, -1 means failure.
 */
-int jbod_client_operation(uint32_t op, uint8_t *block) {// make sure send and receive opcode is same
+int jbod_client_operation(uint32_t op, uint8_t *block) {
+  // Send operation request
   if(!send_packet(cli_sd, op, block)){
     return -1;
   }
 
+  // Get server response
   uint16_t ret;
   uint32_t opret;
   recv_packet(cli_sd, &opret, &ret, block);
+
+  // host/server op agreement check
   if(op != opret){
     return -1;
   }
+
+  // Interpret unsigned ret (-1 stored in uint32_t as 65535)
   return ret==0 ? 0 : -1;
 }
