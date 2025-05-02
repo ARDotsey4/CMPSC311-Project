@@ -29,7 +29,7 @@ static int status = -1; // 1 = mounted, -1 = unmounted
 const int MAX_SIZE = JBOD_NUM_DISKS*JBOD_DISK_SIZE;
 
 int mdadm_mount(void) {
-  int fail = jbod_operation(JBOD_MOUNT,NULL);
+  int fail = jbod_client_operation(JBOD_MOUNT,NULL);
   if (fail){
     return fail;
   }
@@ -39,7 +39,7 @@ int mdadm_mount(void) {
 }
 
 int mdadm_unmount(void) {
-  int fail = jbod_operation(JBOD_UNMOUNT,NULL);
+  int fail = jbod_client_operation(JBOD_UNMOUNT,NULL);
   if (fail){
     return fail;
   }
@@ -48,7 +48,7 @@ int mdadm_unmount(void) {
   return 1;
 }
 
-int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {//Implement update on existing entry in cache!!!!!!!!!!!!!!!!!!!!!!!
+int mdadm_read(uint32_t addr, uint32_t len, uint8_t *buf) {
   // Parameter check
   if(invalidJbodParams(addr, len, buf)){
     return -1;
@@ -122,14 +122,14 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   // Full write within block bounds
   if((startInBlock + len) <= JBOD_BLOCK_SIZE){
     memcpy(blockWrite + startInBlock, buf, len);
-    jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+    jbod_client_operation(JBOD_WRITE_BLOCK, blockWrite);
     cache_update(disk, block, blockWrite);
     return len;
   }
 
   // Write first block
   memcpy(blockWrite + startInBlock, buf, lenInBlock1);
-  jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+  jbod_client_operation(JBOD_WRITE_BLOCK, blockWrite);
   cache_update(disk, block, blockWrite);
   block += 1;
   // Check for 
@@ -142,7 +142,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   uint32_t tempLen = len - lenInBlock1;
   while(tempLen > JBOD_BLOCK_SIZE){
     memcpy(blockWrite, buf + len - tempLen, JBOD_BLOCK_SIZE);
-    jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+    jbod_client_operation(JBOD_WRITE_BLOCK, blockWrite);
     cache_update(disk, block, blockWrite);
     block += 1;
     // Increments
@@ -159,7 +159,7 @@ int mdadm_write(uint32_t addr, uint32_t len, const uint8_t *buf) {
   seekLoc(disk, block);
   memcpy(blockWrite, buf + len - tempLen, tempLen);
 
-  jbod_operation(JBOD_WRITE_BLOCK, blockWrite);
+  jbod_client_operation(JBOD_WRITE_BLOCK, blockWrite);
   cache_update(disk, block, blockWrite);
 
   return len;
@@ -182,8 +182,8 @@ void seekLoc(uint32_t disk, uint32_t block){
   uint32_t locarg = (disk << 20) | (block << 24);
   uint32_t seekDiskOp = locarg | JBOD_SEEK_TO_DISK;
   uint32_t seekBlockOp = locarg | JBOD_SEEK_TO_BLOCK;
-  jbod_operation(seekDiskOp,NULL);
-  jbod_operation(seekBlockOp,NULL);
+  jbod_client_operation(seekDiskOp,NULL);
+  jbod_client_operation(seekBlockOp,NULL);
 }
 
 int incrementDiskCheck(uint32_t *disk, uint32_t *block){
@@ -202,6 +202,6 @@ void readHelp(uint32_t disk, uint32_t block, uint8_t *blockBuf){
   }
   // Pulls directly from JBOD and inserts to cache before returning
   seekLoc(disk, block);
-  jbod_operation(JBOD_READ_BLOCK, blockBuf);
+  jbod_client_operation(JBOD_READ_BLOCK, blockBuf);
   cache_insert(disk, block, blockBuf);
 }

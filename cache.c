@@ -74,10 +74,17 @@ void cache_update(int disk_num, int block_num, const uint8_t *buf) {
 
 int cache_insert(int disk_num, int block_num, const uint8_t *buf) {
   // Parameter check
-  if (invalidCacheParams(disk_num, block_num, buf) || existingEntry(disk_num, block_num) != -1){
+  if (invalidCacheParams(disk_num, block_num, buf)){
     return -1;
   }
 
+  // Entry already exists
+  if(existingEntry(disk_num, block_num) != -1){
+    cache_update(disk_num, block_num, buf);
+    return 1;
+  }
+
+  // Entry does not exist
   int replaceLoc = -1;
   int i = 0;
 
